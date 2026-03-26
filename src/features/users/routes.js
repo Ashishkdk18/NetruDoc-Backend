@@ -23,7 +23,7 @@ router.use(protect);
 
 // Admin only routes
 router.get('/', authorize('admin'), getUsers);
-router.get('/patients', authorize('admin'), getPatients);
+router.get('/patients', authorize('admin', 'doctor'), getPatients);
 
 // User-specific routes (must come after specific routes to avoid conflicts)
 router.get('/:id', getUser);

@@ -28,14 +28,14 @@ router.post('/esewa/failure-redirect', handleEsewaFailureRedirect);
 // Protected routes
 router.use(protect);
 
+// eSewa initialize - must be ABOVE /:id
+router.post('/esewa/initialize', initializeEsewaPayment);
+
 // Routes
 router.post('/create-intent', createPaymentIntent);
 router.post('/confirm', confirmPayment);
 router.get('/history', getPaymentHistory);
-router.get('/:id', getPayment);
 router.post('/:id/refund', refundPayment);
-
-// eSewa integration
-router.post('/esewa/initialize', initializeEsewaPayment);
+router.get('/:id', getPayment);
 
 export default router;
