@@ -182,4 +182,5 @@ connectDB().then(async () => {
   process.exit(1);
 });
 
+export default app;
 export { io };
