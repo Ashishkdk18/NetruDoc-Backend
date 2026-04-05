@@ -21,7 +21,7 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 const connectDB = async () => {
-  
+
   try {
     const mongoURI = process.env.MONGODB_URI || 'mongodb+srv://ashishkhadka014:Ash12345@cluster0.bprwy3x.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0';
 
