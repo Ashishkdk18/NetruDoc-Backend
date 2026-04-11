@@ -12,7 +12,7 @@ export class EmailService {
       service: 'gmail',
       auth: {
         user: process.env.EMAIL_USER || 'ashishkhadka014@gmail.com',
-        pass: process.env.EMAIL_PASS || 'xcuj guqb vyll rsuo'
+        pass: process.env.EMAIL_PASS || 'xods nxzh dhlr elhi'
       }
     });
   }
