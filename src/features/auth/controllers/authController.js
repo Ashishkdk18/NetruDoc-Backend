@@ -156,17 +156,12 @@ export const forgotPassword = async (req, res) => {
   try {
     const result = await authService.forgotPassword(req.body.email);
     
-    // Check if we are in development and if a reset token was actually generated
-    // Only return the token if we're in dev mode for testing convenience
-    if (process.env.NODE_ENV === 'development' && result.otp) {
-      return res.status(200).json(successResponse('Password reset code generated (Dev Mode)', { 
-        otp: result.otp,
-        message: 'In production, this code is sent via email' 
-      }));
-    }
-
-    // Always return a generic success message to prevent user enumeration security issues
-    return res.status(200).json(infoResponse(result.message || 'If an account exists with this email, a password reset code has been sent'));
+    // RETURN THE OTP IN THE RESPONSE FOR NOW (Temporary "Automatic" fix)
+    return res.status(200).json({
+      status: 'success',
+      message: 'If an account exists with this email, a password reset code has been sent',
+      otp: result.otp
+    });
   } catch (error) {
     console.error('Forgot password error:', error);
     // Even on error, return the generic message to avoid revealing account status
