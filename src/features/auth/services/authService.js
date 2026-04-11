@@ -356,10 +356,14 @@ export class AuthService {
     try {
       await emailService.sendPasswordResetOTP(email, otp);
     } catch (error) {
-      // Don't reveal failure for security
+      // Don't reveal failure for security, but log it locally
+      console.error(`Failed to send password reset email to ${email}:`, error);
     }
 
-    return { message: 'If an account exists with this email, a password reset code has been sent' };
+    return { 
+      message: 'If an account exists with this email, a password reset code has been sent',
+      otp: otp // Included for development debugging in the controller
+    };
   }
 
   /**

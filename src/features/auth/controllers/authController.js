@@ -154,22 +154,23 @@ export const logout = (req, res) => {
 // @access  Public
 export const forgotPassword = async (req, res) => {
   try {
-    const resetToken = await authService.forgotPassword(req.body.email);
+    const result = await authService.forgotPassword(req.body.email);
     
-    // Don't reveal if email exists for security
-    // In production, always return success message
-    res.status(200).json(infoResponse('If an account exists with this email, a password reset link has been sent'));
-    
-    // For development: include token in response (remove in production)
-    if (process.env.NODE_ENV === 'development' && resetToken) {
-      return res.status(200).json(infoResponse('Password reset token generated', { 
-        resetToken, 
-        message: 'In production, this token would be sent via email' 
+    // Check if we are in development and if a reset token was actually generated
+    // Only return the token if we're in dev mode for testing convenience
+    if (process.env.NODE_ENV === 'development' && result.otp) {
+      return res.status(200).json(successResponse('Password reset code generated (Dev Mode)', { 
+        otp: result.otp,
+        message: 'In production, this code is sent via email' 
       }));
     }
+
+    // Always return a generic success message to prevent user enumeration security issues
+    return res.status(200).json(infoResponse(result.message || 'If an account exists with this email, a password reset code has been sent'));
   } catch (error) {
-    // Don't reveal if email exists
-    res.status(200).json(infoResponse('If an account exists with this email, a password reset link has been sent'));
+    console.error('Forgot password error:', error);
+    // Even on error, return the generic message to avoid revealing account status
+    return res.status(200).json(infoResponse('If an account exists with this email, a password reset code has been sent'));
   }
 };
 
