@@ -25,14 +25,8 @@ class EmailService {
       const msg = {
         to: email,
         from: this.fromEmail,
-        subject: 'Welcome to NetruDoc - Verify Your Email',
-        html: `
-          <div style="font-family: Arial, sans-serif; padding: 20px; border: 1px solid #e1e1e1; border-radius: 10px;">
-            <h2 style="color: #4f46e5;">Welcome to NetruDoc</h2>
-            <p>Your verification code is: <b style="font-size: 24px;">${otp}</b></p>
-            <p>This code expires in 10 minutes.</p>
-          </div>
-        `,
+        subject: 'Verify your account - NetruDoc',
+        html: `<p>Your account verification code is: <b>${otp}</b></p><p>This code expires in 10 minutes.</p>`,
       };
 
       if (!this.apiKey) {
@@ -58,8 +52,8 @@ class EmailService {
       const msg = {
         to: email,
         from: this.fromEmail,
-        subject: 'NetruDoc - Login Verification',
-        html: `<p>Your login verification code is: <b>${otp}</b></p>`,
+        subject: 'Login verification code - NetruDoc',
+        html: `<p>Your login verification code is: <b>${otp}</b></p><p>This code expires in 10 minutes.</p>`,
       };
       await sgMail.send(msg);
       console.log(`📧 SendGrid: Login OTP sent to ${email}`);
@@ -79,8 +73,8 @@ class EmailService {
       const msg = {
         to: email,
         from: this.fromEmail,
-        subject: 'NetruDoc - Password Reset',
-        html: `<p>Your password reset code is: <b>${otp}</b></p>`,
+        subject: 'Your password reset code - NetruDoc',
+        html: `<p>Your password reset code is: <b>${otp}</b></p><p>This code expires in 10 minutes.</p>`,
       };
       await sgMail.send(msg);
       console.log(`📧 SendGrid: Reset OTP sent to ${email}`);

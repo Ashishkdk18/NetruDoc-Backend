@@ -230,8 +230,11 @@ export const resendOTP = async (req, res) => {
     const result = await authService.resendRegistrationOTP(email);
     res.status(200).json(successResponse(result.message));
   } catch (error) {
-    console.error(error);
-    res.status(500).json(errorResponse('Failed to resend verification code'));
+    console.error('📧 Resend OTP Error:', error.message);
+    if (error.message === 'User not found' || error.message === 'Email already verified') {
+      return res.status(400).json(errorResponse(error.message));
+    }
+    res.status(500).json(errorResponse(`Failed to resend verification code: ${error.message}`));
   }
 };
 
