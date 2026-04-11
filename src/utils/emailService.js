@@ -6,11 +6,16 @@ dotenv.config();
 class EmailService {
   constructor() {
     this.transporter = nodemailer.createTransport({
-      service: 'gmail', // You can change this or use host/port/secure for other providers
+      host: 'smtp.gmail.com',
+      port: 465,
+      secure: true, // Use SSL
       auth: {
         user: process.env.EMAIL_USER || 'ashishkhadka014@gmail.com',
-        pass: process.env.EMAIL_PASS, // Should use App Password for Gmail
+        pass: process.env.EMAIL_PASS,
       },
+      tls: {
+        rejectUnauthorized: false // Helps with some hosting provider restrictions
+      }
     });
   }
 
