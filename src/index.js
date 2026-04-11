@@ -53,6 +53,11 @@ const io = new Server(server, {
         return callback(null, true);
       }
 
+      // Allow all Vercel deployments (production + preview URLs)
+      if (origin && origin.match(/https:\/\/.*\.vercel\.app$/)) {
+        return callback(null, true);
+      }
+
       // For development, allow all origins to make testing easier
       if (process.env.NODE_ENV === 'development') {
         return callback(null, true);
@@ -99,6 +104,11 @@ app.use(cors({
 
     // Allow local network IPs (192.168.x.x, 10.x.x.x, 172.16-31.x.x, 169.254.x.x)
     if (origin && /^(https?:\/\/)?(192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[0-1])\.|169\.254\.)\d+\.\d+:\d+$/.test(origin)) {
+      return callback(null, true);
+    }
+
+    // Allow all Vercel deployments (production + preview URLs)
+    if (origin && origin.match(/https:\/\/.*\.vercel\.app$/)) {
       return callback(null, true);
     }
 
