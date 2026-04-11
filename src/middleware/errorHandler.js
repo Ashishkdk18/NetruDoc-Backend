@@ -25,7 +25,10 @@ const errorHandler = (err, req, res, next) => {
   // Log error
   logger.error(err);
 
-  let statusCode = 500;
+  let statusCode = err.statusCode || res.statusCode;
+  // If status code is 200 (default), change to 500 for error handling
+  if (statusCode === 200) statusCode = 500;
+  
   let message = 'Internal server error';
   let data = {};
 

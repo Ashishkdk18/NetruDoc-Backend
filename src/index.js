@@ -135,6 +135,11 @@ app.use(limiter);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+// Root route
+app.get('/', (req, res) => {
+  res.status(200).send('<h1>Welcome to NetruDoc API</h1><p>The server is running successfully. Please use the frontend application to interact with this API.</p>');
+});
+
 // Health check endpoint
 app.get('/api/health', (req, res) => {
   res.status(200).json({
