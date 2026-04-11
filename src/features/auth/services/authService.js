@@ -128,6 +128,12 @@ export class AuthService {
     const otp = user.generateOTP('registration');
     await user.save({ validateBeforeSave: false });
 
+    // LOG OTP FOR DEBUGGING (Read this from Render Logs!)
+    console.log('\n==========================================');
+    console.log('DEBUG: VERIFICATION CODE FOR', email);
+    console.log('CODE:', otp);
+    console.log('==========================================\n');
+
     try {
       await emailService.sendRegistrationOTP(email, otp);
     } catch (error) {
@@ -349,18 +355,22 @@ export class AuthService {
       return { message: 'If an account exists with this email, a password reset code has been sent' };
     }
 
-    // Generate and send OTP
+    // Generate OTP
     const otp = user.generateOTP('password-reset');
     await user.save({ validateBeforeSave: false });
 
-    try {
-      await emailService.sendPasswordResetOTP(email, otp);
-    } catch (error) {
-      // Don't reveal failure for security, but log it locally
-      console.error(`Failed to send password reset email to ${email}:`, error);
-    }
+    // LOG OTP FOR DEBUGGING (Read this from Render Logs!)
+    console.log('\n==========================================');
+    console.log('DEBUG: PASSWORD RESET CODE FOR', email);
+    console.log('CODE:', otp);
+    console.log('==========================================\n');
 
-    return { 
+    // Attempt to send email but don't block the response
+    emailService.sendPasswordResetOTP(email, otp).catch(err => {
+      console.error('📧 Password reset email failed, use code from logs:', err.message);
+    });
+
+    return {
       message: 'If an account exists with this email, a password reset code has been sent',
       otp: otp // Included for development debugging in the controller
     };
