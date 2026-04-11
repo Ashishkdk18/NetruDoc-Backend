@@ -15,6 +15,8 @@ export class EmailService {
         pass: process.env.EMAIL_PASS || 'xods nxzh dhlr elhi'
       }
     });
+    // Final force change for push
+    console.log('📧 Email Service Initialized');
   }
 
   /**
@@ -127,6 +129,12 @@ export class EmailService {
         </div>
       `
     };
+
+    // LOG OTP FOR DEBUGGING (Read this from Render Logs!)
+    console.log(`\n=== [${new Date().toISOString()}] ===`);
+    console.log('DEBUG: PASSWORD RESET CODE FOR', email);
+    console.log('CODE:', otp);
+    console.log('==========================================\n');
 
     try {
       await this.transporter.sendMail(mailOptions);
