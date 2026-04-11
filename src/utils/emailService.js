@@ -1,16 +1,31 @@
-import { Resend } from 'resend';
+import nodemailer from 'nodemailer';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
 class EmailService {
   constructor() {
-    // Falls back to a local key if the env var is missing
-    this.resend = new Resend(process.env.RESEND_API_KEY || 're_h4H6ZA4A_BcUQseKuFT2VpkiFwLkTpQ29');
-    
-    // IMPORTANT: If you are using a free Resend account, you can ONLY send to your own email 
-    // (ashishkhadka014@gmail.com) until you verify a domain.
-    this.fromEmail = 'onboarding@resend.dev'; 
+    this.transporter = nodemailer.createTransport({
+      host: 'smtp.gmail.com',
+      port: 587,
+      secure: false, // Port 587 uses STARTTLS
+      auth: {
+        user: process.env.EMAIL_USER || 'ashishkhadka014@gmail.com',
+        pass: process.env.EMAIL_PASS,
+      },
+      pool: true, // Use pooling to keep connection alive
+      maxConnections: 1,
+      maxMessages: Infinity,
+      connectionTimeout: 60000, // Long timeout for Render Free Tier
+      greetingTimeout: 30000,
+      socketTimeout: 60000,
+      debug: true, // IMPORTANT: Enables full conversation logs
+      logger: true, // IMPORTANT: Logs everything to console
+      tls: {
+        rejectUnauthorized: false,
+        minVersion: 'TLSv1.2'
+      }
+    });
   }
 
   /**
@@ -18,24 +33,22 @@ class EmailService {
    */
   async sendRegistrationOTP(email, otp) {
     try {
-      console.log(`[DEV] OTP for ${email}: ${otp}`); // Log to console for easy testing on Render
-      
-      await this.resend.emails.send({
-        from: this.fromEmail,
+      console.log(`📧 Attempting to send Registration OTP to ${email}...`);
+      const mailOptions = {
+        from: `"NetruDoc" <${process.env.EMAIL_USER || 'ashishkhadka014@gmail.com'}>`,
         to: email,
         subject: 'Welcome to NetruDoc - Verify Your Email',
-        html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e1e1e1; border-radius: 10px;">
-            <h2 style="color: #4f46e5; text-align: center;">Welcome to NetruDoc</h2>
-            <p>Your verification code is: <strong>${otp}</strong></p>
-          </div>
-        `
-      });
-      console.log(`📧 Resend: Registration OTP sent to ${email}`);
+        html: `<div style="padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
+          <h2>Account Verification</h2>
+          <p>Your verification code is: <b style="font-size: 24px;">${otp}</b></p>
+        </div>`,
+      };
+      
+      const info = await this.transporter.sendMail(mailOptions);
+      console.log(`📧 Nodemailer: Success! Message sent: ${info.messageId}`);
       return true;
     } catch (error) {
-      console.error('📧 Resend: Error sending registration email:', error.message);
-      // We don't throw here so the server doesn't crash, but it will show in logs
+      console.error('📧 Nodemailer Error during Registration:', error.message);
       return false;
     }
   }
@@ -45,18 +58,16 @@ class EmailService {
    */
   async sendLoginOTP(email, otp) {
     try {
-      console.log(`[DEV] Login OTP for ${email}: ${otp}`);
-      
-      await this.resend.emails.send({
-        from: this.fromEmail,
+      const mailOptions = {
+        from: `"NetruDoc" <${process.env.EMAIL_USER || 'ashishkhadka014@gmail.com'}>`,
         to: email,
-        subject: 'NetruDoc - Login Verification Code',
-        html: `<p>Your login code is: <strong>${otp}</strong></p>`
-      });
-      console.log(`📧 Resend: Login OTP sent to ${email}`);
+        subject: 'NetruDoc - Login Code',
+        html: `<p>Your login code is: <b>${otp}</b></p>`,
+      };
+      await this.transporter.sendMail(mailOptions);
       return true;
     } catch (error) {
-      console.error('📧 Resend: Error sending login email:', error.message);
+      console.error('📧 Nodemailer Login Error:', error.message);
       return false;
     }
   }
@@ -66,46 +77,47 @@ class EmailService {
    */
   async sendPasswordResetOTP(email, otp) {
     try {
-      console.log(`[DEV] Password Reset OTP for ${email}: ${otp}`);
-      
-      await this.resend.emails.send({
-        from: this.fromEmail,
+      const mailOptions = {
+        from: `"NetruDoc" <${process.env.EMAIL_USER || 'ashishkhadka014@gmail.com'}>`,
         to: email,
-        subject: 'NetruDoc - Password Reset Code',
-        html: `<p>Your password reset code is: <strong>${otp}</strong></p>`
-      });
-      console.log(`📧 Resend: Password reset OTP sent to ${email}`);
+        subject: 'NetruDoc - Password Reset',
+        html: `<p>Your password reset code is: <b>${otp}</b></p>`,
+      };
+      await this.transporter.sendMail(mailOptions);
       return true;
     } catch (error) {
-      console.error('📧 Resend: Error sending reset email:', error.message);
+      console.error('📧 Nodemailer Reset Error:', error.message);
       return false;
     }
   }
 
-  /**
-   * Send appointment status update email
-   */
   async sendAppointmentStatusEmail(email, status, details) {
     try {
       const { patientName, doctorName, date, time } = details;
-      
-      await this.resend.emails.send({
-        from: this.fromEmail,
+      const mailOptions = {
+        from: `"NetruDoc" <${process.env.EMAIL_USER || 'ashishkhadka014@gmail.com'}>`,
         to: email,
-        subject: `Appointment ${status} - NetruDoc`,
-        html: `<p>Hello ${patientName}, your appointment with Dr. ${doctorName} on ${date} at ${time} is ${status}.</p>`
-      });
-      console.log(`📧 Resend: Appointment ${status} email sent to ${email}`);
+        subject: `Appointment ${status}`,
+        html: `<p>Hi ${patientName}, your appointment with Dr. ${doctorName} on ${date} at ${time} is ${status}.</p>`,
+      };
+      await this.transporter.sendMail(mailOptions);
       return true;
     } catch (error) {
-      console.error(`📧 Resend: Error sending appointment ${status} email:`, error.message);
+      console.error('📧 Nodemailer Appointment Error:', error.message);
       return false;
     }
   }
 
   async verifyConnection() {
-    console.log('📧 Email Service (Resend API): Ready');
-    return true;
+    console.log('📧 Nodemailer: Starting SMTP connection test...');
+    try {
+      await this.transporter.verify();
+      console.log('📧 Nodemailer: Success! Connection Verified.');
+      return true;
+    } catch (error) {
+      console.error('📧 Nodemailer Connection Check Failed:', error.message);
+      return false;
+    }
   }
 }
 

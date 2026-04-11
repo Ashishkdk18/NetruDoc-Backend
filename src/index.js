@@ -136,24 +136,31 @@ app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
 
-connectDB().then(async () => {
-  try {
-    await seedDatabase();
-    emailService.verifyConnection().catch(err => {
-      console.error('📧 Email Service: Verification failed:', err.message);
+// Initialize database connection
+connectDB();
+
+// Only start the server if we're NOT on Vercel
+if (!process.env.VERCEL) {
+  connectDB().then(async () => {
+    try {
+      await seedDatabase();
+      emailService.verifyConnection().catch(err => {
+        console.error('📧 Email Service: Verification failed:', err.message);
+      });
+    } catch (error) {
+      console.error('Warning: Database seeding failed:', error.message);
+    }
+
+    server.listen(PORT, () => {
+      console.log(`🚀 NetruDoc Server running on port ${PORT}`);
+      console.log(`📧 Active Email User: ${process.env.EMAIL_USER || 'ashishkhadka014@gmail.com'}`);
     });
-  } catch (error) {
-    console.error('Warning: Database seeding failed:', error.message);
-  }
-
-  server.listen(PORT, () => {
-    console.log(`🚀 NetruDoc Server running on port ${PORT}`);
-    console.log(`📧 Active Email User: ${process.env.EMAIL_USER || 'ashishkhadka014@gmail.com'}`);
+  }).catch((error) => {
+    console.error('Failed to start server:', error);
+    process.exit(1);
   });
-}).catch((error) => {
-  console.error('Failed to start server:', error);
-  process.exit(1);
-});
+}
 
+// Export for Vercel
 export default app;
-export { io };
+export { io, server };
