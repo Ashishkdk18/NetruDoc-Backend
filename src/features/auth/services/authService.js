@@ -129,7 +129,7 @@ export class AuthService {
     await user.save({ validateBeforeSave: false });
 
     // LOG OTP FOR DEBUGGING (Read this from Render Logs!)
-    console.log('\n==========================================');
+    console.log(`\n=== [${new Date().toISOString()}] ===`);
     console.log('DEBUG: VERIFICATION CODE FOR', email);
     console.log('CODE:', otp);
     console.log('==========================================\n');
