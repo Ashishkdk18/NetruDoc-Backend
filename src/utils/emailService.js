@@ -7,14 +7,19 @@ class EmailService {
   constructor() {
     this.transporter = nodemailer.createTransport({
       host: 'smtp.gmail.com',
-      port: 465,
-      secure: true, // Use SSL
+      port: 587,
+      secure: false, // Port 587 uses STARTTLS
+      requireTLS: true,
       auth: {
         user: process.env.EMAIL_USER || 'ashishkhadka014@gmail.com',
         pass: process.env.EMAIL_PASS,
       },
+      connectionTimeout: 10000, // 10 seconds timeout
+      greetingTimeout: 10000,
+      socketTimeout: 10000,
       tls: {
-        rejectUnauthorized: false // Helps with some hosting provider restrictions
+        rejectUnauthorized: false,
+        minVersion: 'TLSv1.2'
       }
     });
   }
@@ -154,12 +159,17 @@ class EmailService {
    * Verify SMTP connection
    */
   async verifyConnection() {
+    console.log('📧 Email Service: Verifying connection to Gmail...');
     try {
       await this.transporter.verify();
-      console.log('📧 Email Service: Nodemailer Ready');
+      console.log('📧 Email Service: Nodemailer Ready (Connection Verified)');
       return true;
     } catch (error) {
-      console.error('📧 Email Service Error:', error.message);
+      console.error('📧 Email Service Error Details:', {
+        message: error.message,
+        code: error.code,
+        command: error.command
+      });
       return false;
     }
   }
