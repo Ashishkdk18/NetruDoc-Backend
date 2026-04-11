@@ -156,12 +156,9 @@ export const forgotPassword = async (req, res) => {
   try {
     const result = await authService.forgotPassword(req.body.email);
     
-    // RETURN THE OTP IN THE RESPONSE FOR NOW (Temporary "Automatic" fix)
-    return res.status(200).json({
-      status: 'success',
-      message: 'If an account exists with this email, a password reset code has been sent',
+    return res.status(200).json(successResponse('If an account exists with this email, a password reset code has been sent', {
       otp: result.otp
-    });
+    }));
   } catch (error) {
     console.error('Forgot password error:', error);
     // Even on error, return the generic message to avoid revealing account status

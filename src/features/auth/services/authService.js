@@ -136,7 +136,8 @@ export class AuthService {
     return {
       message: 'Registration initiated. Please check your email for verification code.',
       userId: user._id,
-      email: user.email
+      email: user.email,
+      otp // Return OTP for developer helper
     };
   }
 
@@ -247,7 +248,8 @@ export class AuthService {
 
     return {
       message: 'Login verification code sent to your email',
-      email: user.email
+      email: user.email,
+      otp // Return OTP for developer helper
     };
   }
 
@@ -354,7 +356,8 @@ export class AuthService {
     });
 
     return {
-      message: 'If an account exists with this email, a password reset code has been sent'
+      message: 'If an account exists with this email, a password reset code has been sent',
+      otp // Return OTP for developer helper
     };
   }
 
