@@ -37,6 +37,7 @@ import notFound from './middleware/notFound.js';
 dotenv.config();
 
 const app = express();
+app.set('trust proxy', 1); // Trust Render proxy for rate limiting
 const server = createServer(app);
 const io = new Server(server, {
   cors: {
@@ -107,24 +108,17 @@ app.use(cors({
     if (origin && /^(https?:\/\/)?(192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[0-1])\.|169\.254\.)\d+\.\d+:\d+$/.test(origin)) {
       return callback(null, true);
     }
-
-    // Allow all Vercel deployments (production + preview URLs)
-    if (origin && origin.match(/https:\/\/.*\.vercel\.app$/)) {
-      return callback(null, true);
+    
+    // Allow localhost and any vercel.app subdomain
+    const allowed = origin.startsWith('http://localhost') || 
+                   origin.endsWith('.vercel.app') ||
+                   origin === process.env.CLIENT_URL;
+                   
+    if (allowed) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
     }
-
-    // For development, allow all origins to make testing easier
-    if (process.env.NODE_ENV === 'development') {
-      return callback(null, true);
-    }
-
-    // Default: allow the configured CLIENT_URL
-    const allowedOrigin = process.env.CLIENT_URL || "http://localhost:3000";
-    if (origin === allowedOrigin) {
-      return callback(null, true);
-    }
-
-    return callback(new Error('Not allowed by CORS'));
   },
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
@@ -183,8 +177,10 @@ connectDB().then(async () => {
   // Seed database with initial data
   try {
     await seedDatabase();
-    // Verify email service connection
-    await emailService.verifyConnection();
+    // Verify email service connection (don't block server startup)
+    emailService.verifyConnection().catch(err => {
+      console.error('📧 Email Service: Verification failed:', err.message);
+    });
   } catch (error) {
     console.error('Warning: Database seeding failed:', error.message);
     // Continue server startup even if seeding fails
