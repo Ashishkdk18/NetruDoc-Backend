@@ -5,6 +5,7 @@ dotenv.config();
 
 class EmailService {
   constructor() {
+    console.log('📧 EmailService: Initializing with Gmail SMTP...');
     this.transporter = nodemailer.createTransport({
       host: 'smtp.gmail.com',
       port: 587,

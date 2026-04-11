@@ -136,30 +136,43 @@ app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
 
-// Initialize database connection
-connectDB();
-
-// Only start the server if we're NOT on Vercel
-if (!process.env.VERCEL) {
-  connectDB().then(async () => {
-    try {
+// Unified startup for both Vercel and Render
+const startServer = async () => {
+  try {
+    await connectDB();
+    
+    // Only run seeding and verification if NOT on Vercel (or during manual trigger)
+    if (!process.env.VERCEL) {
+      console.log('📦 Production Environment (Render/Local) detected...');
       await seedDatabase();
-      emailService.verifyConnection().catch(err => {
-        console.error('📧 Email Service: Verification failed:', err.message);
+      
+      // non-blocking verification
+      emailService.verifyConnection().then(success => {
+        if (success) console.log('✅ SMTP Configuration looks good!');
       });
-    } catch (error) {
-      console.error('Warning: Database seeding failed:', error.message);
+      
+      server.listen(PORT, () => {
+        console.log(`🚀 NetruDoc Server running on port ${PORT}`);
+      });
     }
+  } catch (error) {
+    console.error('❌ Critical Startup Error:', error.message);
+    if (!process.env.VERCEL) process.exit(1);
+  }
+};
 
-    server.listen(PORT, () => {
-      console.log(`🚀 NetruDoc Server running on port ${PORT}`);
-      console.log(`📧 Active Email User: ${process.env.EMAIL_USER || 'ashishkhadka014@gmail.com'}`);
-    });
-  }).catch((error) => {
-    console.error('Failed to start server:', error);
-    process.exit(1);
+startServer();
+
+// Add a manual test route to trigger email verification
+app.get('/api/auth/test-email', async (req, res) => {
+  console.log('🧪 Manual Email Test Triggered...');
+  const success = await emailService.verifyConnection();
+  res.json({ 
+    success, 
+    message: success ? 'Nodemailer connection works!' : 'Nodemailer connection failed. Check server logs.',
+    timestamp: new Date()
   });
-}
+});
 
 // Export for Vercel
 export default app;
