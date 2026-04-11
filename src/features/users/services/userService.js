@@ -187,8 +187,22 @@ export class UserService extends BaseService {
    * @param {String} id - User ID
    * @returns {Promise<Object>}
    */
+  /**
+   * Delete user (soft delete by setting isActive to false)
+   * @param {String} id - User ID
+   * @returns {Promise<Object>}
+   */
   async deleteUser(id) {
     return this.update(id, { isActive: false });
+  }
+
+  /**
+   * Permanently delete user from database (Hard delete)
+   * @param {String} id - User ID
+   * @returns {Promise<Object>}
+   */
+  async permanentlyDeleteUser(id) {
+    return this.repository.deleteById(id);
   }
 
   /**

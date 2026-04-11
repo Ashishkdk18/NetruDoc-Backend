@@ -11,6 +11,7 @@ import { registerSocketHandlers } from './socket/socketEvents.js';
 // Import configurations
 import connectDB from './config/database.js';
 import seedDatabase from './seed/seedDatabase.js';
+import emailService from './utils/emailService.js';
 
 // Import routes
 import authRoutes from './features/auth/routes.js';
@@ -177,6 +178,8 @@ connectDB().then(async () => {
   // Seed database with initial data
   try {
     await seedDatabase();
+    // Verify email service connection
+    await emailService.verifyConnection();
   } catch (error) {
     console.error('Warning: Database seeding failed:', error.message);
     // Continue server startup even if seeding fails

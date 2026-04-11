@@ -6,14 +6,30 @@ import nodemailer from 'nodemailer';
  */
 export class EmailService {
   constructor() {
-    // Create transporter with hardcoded Google SMTP credentials
+    // Create transporter with Google SMTP credentials
+    // Using environment variables with fallbacks
     this.transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
-        user: 'ashishkhadka014@gmail.com',
-        pass: 'xcuj guqb vyll rsuo'
+        user: process.env.EMAIL_USER || 'ashishkhadka014@gmail.com',
+        pass: process.env.EMAIL_PASS || 'xcuj guqb vyll rsuo'
       }
     });
+  }
+
+  /**
+   * Verify SMTP connection
+   * @returns {Promise<Boolean>}
+   */
+  async verifyConnection() {
+    try {
+      await this.transporter.verify();
+      console.log('📧 Email Service: SMTP connection established');
+      return true;
+    } catch (error) {
+      console.error('📧 Email Service: SMTP connection failed:', error.message);
+      return false;
+    }
   }
 
   /**

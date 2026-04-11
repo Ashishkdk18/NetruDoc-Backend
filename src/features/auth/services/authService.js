@@ -131,9 +131,11 @@ export class AuthService {
     try {
       await emailService.sendRegistrationOTP(email, otp);
     } catch (error) {
-      // If email fails, delete the temporary user record
-      await this.userService.deleteUser(user._id);
-      throw new Error('Failed to send verification email. Please try again.');
+      // If email fails, HARD delete the temporary user record so they can try again
+      // Soft-deleting (isActive: false) leads to "Account Deactivated" loop
+      await this.userService.permanentlyDeleteUser(user._id);
+      console.error(`Registration failed to send email to ${email}:`, error);
+      throw new Error('Failed to send verification email. Please check your email address and try again.');
     }
 
     return {
@@ -161,6 +163,10 @@ export class AuthService {
     // Check if account is active
     if (!user.isActive) {
       console.warn(`Login failed: Account deactivated for email ${email}`);
+      // If the user is deactivated but not verified, it was likely a failed/incomplete registration
+      if (!user.emailVerified) {
+        throw new Error('Your registration was incomplete or failed. Please try registering again.');
+      }
       throw new Error('Your account has been deactivated. Please contact support.');
     }
 
