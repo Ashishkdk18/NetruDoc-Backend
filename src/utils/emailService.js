@@ -5,10 +5,6 @@ dotenv.config();
 
 class EmailService {
   constructor() {
-    // DEBUG: List available keys to help troubleshoot Render
-    const keys = Object.keys(process.env).filter(k => k.includes('SENDGRID') || k.includes('EMAIL'));
-    console.log('🔍 Available Email Keys:', keys);
-    
     this.apiKey = process.env.SENDGRID_API_KEY;
     if (this.apiKey) {
       sgMail.setApiKey(this.apiKey);
@@ -24,7 +20,7 @@ class EmailService {
    */
   async sendRegistrationOTP(email, otp) {
     try {
-      console.log(`[DEV] Registration OTP for ${email}: ${otp}`); // For easy testing if email is slow
+      console.log(`📧 Sending Registration OTP to ${email}...`);
       
       const msg = {
         to: email,
@@ -58,7 +54,7 @@ class EmailService {
    */
   async sendLoginOTP(email, otp) {
     try {
-      console.log(`[DEV] Login OTP for ${email}: ${otp}`);
+      console.log(`📧 Sending Login OTP to ${email}...`);
       const msg = {
         to: email,
         from: this.fromEmail,
@@ -79,7 +75,7 @@ class EmailService {
    */
   async sendPasswordResetOTP(email, otp) {
     try {
-      console.log(`[DEV] Reset OTP for ${email}: ${otp}`);
+      console.log(`📧 Sending Reset OTP to ${email}...`);
       const msg = {
         to: email,
         from: this.fromEmail,
