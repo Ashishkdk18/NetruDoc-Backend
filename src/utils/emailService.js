@@ -1,229 +1,163 @@
 import nodemailer from 'nodemailer';
+import dotenv from 'dotenv';
 
-/**
- * Email Service using Google SMTP
- * Handles sending OTP emails for authentication
- */
-export class EmailService {
+dotenv.config();
+
+class EmailService {
   constructor() {
-    // Create transporter with explicit Google SMTP configuration
-    // Using port 465 (SMTPS) is generally more reliable in cloud environments
     this.transporter = nodemailer.createTransport({
-      service: 'gmail',
+      service: 'gmail', // You can change this or use host/port/secure for other providers
       auth: {
         user: process.env.EMAIL_USER || 'ashishkhadka014@gmail.com',
-        pass: process.env.EMAIL_PASS || 'xods nxzh dhlr elhi'
-      }
+        pass: process.env.EMAIL_PASS, // Should use App Password for Gmail
+      },
     });
-    // Final force change for push
-    console.log('📧 Email Service Initialized');
+  }
+
+  /**
+   * Send registration OTP
+   */
+  async sendRegistrationOTP(email, otp) {
+    try {
+      const mailOptions = {
+        from: `"NetruDoc" <${process.env.EMAIL_USER || 'ashishkhadka014@gmail.com'}>`,
+        to: email,
+        subject: 'Welcome to NetruDoc - Verify Your Email',
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e1e1e1; border-radius: 10px;">
+            <h2 style="color: #4f46e5; text-align: center;">Welcome to NetruDoc</h2>
+            <p>Thank you for signing up. Please use the following verification code to complete your registration:</p>
+            <div style="background-color: #f3f4f6; padding: 15px; text-align: center; font-size: 24px; font-weight: bold; letter-spacing: 5px; border-radius: 5px; margin: 20px 0;">
+              ${otp}
+            </div>
+            <p>This code will expire in 10 minutes.</p>
+            <p style="color: #6b7280; font-size: 12px;">If you didn't create an account, please ignore this email.</p>
+          </div>
+        `,
+      };
+
+      await this.transporter.sendMail(mailOptions);
+      console.log(`📧 Nodemailer: Registration OTP sent to ${email}`);
+      return true;
+    } catch (error) {
+      console.error('📧 Nodemailer: Error sending registration email:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Send login verification OTP
+   */
+  async sendLoginOTP(email, otp) {
+    try {
+      const mailOptions = {
+        from: `"NetruDoc" <${process.env.EMAIL_USER || 'ashishkhadka014@gmail.com'}>`,
+        to: email,
+        subject: 'NetruDoc - Login Verification Code',
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e1e1e1; border-radius: 10px;">
+            <h2 style="color: #4f46e5; text-align: center;">Login Verification</h2>
+            <p>Please use the following code to verify your login:</p>
+            <div style="background-color: #f3f4f6; padding: 15px; text-align: center; font-size: 24px; font-weight: bold; letter-spacing: 5px; border-radius: 5px; margin: 20px 0;">
+              ${otp}
+            </div>
+            <p>This code will expire in 10 minutes.</p>
+          </div>
+        `,
+      };
+
+      await this.transporter.sendMail(mailOptions);
+      console.log(`📧 Nodemailer: Login OTP sent to ${email}`);
+      return true;
+    } catch (error) {
+      console.error('📧 Nodemailer: Error sending login email:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Send password reset OTP
+   */
+  async sendPasswordResetOTP(email, otp) {
+    try {
+      const mailOptions = {
+        from: `"NetruDoc" <${process.env.EMAIL_USER || 'ashishkhadka014@gmail.com'}>`,
+        to: email,
+        subject: 'NetruDoc - Password Reset Code',
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e1e1e1; border-radius: 10px;">
+            <h2 style="color: #4f46e5; text-align: center;">Password Reset Request</h2>
+            <p>We received a request to reset your password. Use the code below to proceed:</p>
+            <div style="background-color: #f3f4f6; padding: 15px; text-align: center; font-size: 24px; font-weight: bold; letter-spacing: 5px; border-radius: 5px; margin: 20px 0;">
+              ${otp}
+            </div>
+            <p>This code will expire in 10 minutes.</p>
+            <p style="color: #ef4444; font-size: 13px;">If you didn't request a password reset, please secure your account immediately.</p>
+          </div>
+        `,
+      };
+
+      await this.transporter.sendMail(mailOptions);
+      console.log(`📧 Nodemailer: Password reset OTP sent to ${email}`);
+      return true;
+    } catch (error) {
+      console.error('📧 Nodemailer: Error sending reset email:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Send appointment status update email
+   */
+  async sendAppointmentStatusEmail(email, status, details) {
+    try {
+      const { patientName, doctorName, date, time, reason } = details;
+      const formattedDate = new Date(date).toLocaleDateString();
+      
+      const statusText = status === 'confirmed' ? 'Confirmed' : 'Cancelled';
+      const color = status === 'confirmed' ? '#10b981' : '#ef4444';
+
+      const mailOptions = {
+        from: `"NetruDoc" <${process.env.EMAIL_USER || 'ashishkhadka014@gmail.com'}>`,
+        to: email,
+        subject: `Appointment ${statusText} - NetruDoc`,
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e1e1e1; border-radius: 10px;">
+            <h2 style="color: ${color}; text-align: center;">Appointment ${statusText}</h2>
+            <p>Hello ${patientName || 'Patient'},</p>
+            <p>Your appointment with <strong>Dr. ${doctorName || 'Doctor'}</strong> has been <strong>${status}</strong>.</p>
+            <div style="background-color: #f3f4f6; padding: 15px; border-radius: 5px; margin: 20px 0;">
+              <p><strong>Date:</strong> ${formattedDate}</p>
+              <p><strong>Time:</strong> ${time}</p>
+              ${reason ? `<p><strong>Reason:</strong> ${reason}</p>` : ''}
+            </div>
+            <p>For any questions, please contact our support.</p>
+          </div>
+        `,
+      };
+
+      await this.transporter.sendMail(mailOptions);
+      console.log(`📧 Nodemailer: Appointment ${status} email sent to ${email}`);
+      return true;
+    } catch (error) {
+      console.error(`📧 Nodemailer: Error sending appointment ${status} email:`, error);
+      throw error;
+    }
   }
 
   /**
    * Verify SMTP connection
-   * @returns {Promise<Boolean>}
    */
   async verifyConnection() {
     try {
       await this.transporter.verify();
-      console.log('📧 Email Service: SMTP connection established');
+      console.log('📧 Email Service: Nodemailer Ready');
       return true;
     } catch (error) {
-      console.error('📧 Email Service: SMTP connection failed:', error.message);
+      console.error('📧 Email Service Error:', error.message);
       return false;
-    }
-  }
-
-  /**
-   * Send OTP email for registration verification
-   * @param {String} email - Recipient email
-   * @param {String} otp - 6-digit OTP code
-   * @returns {Promise<void>}
-   */
-  async sendRegistrationOTP(email, otp) {
-    const mailOptions = {
-      from: 'ashishkhadka014@gmail.com',
-      to: email,
-      subject: 'NetruDoc - Email Verification OTP',
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #1976d2;">Welcome to NetruDoc!</h2>
-          <p>Please verify your email address to complete your registration.</p>
-          <div style="background-color: #f5f5f5; padding: 20px; text-align: center; margin: 20px 0;">
-            <h3 style="color: #333; margin: 0;">Your Verification Code</h3>
-            <div style="font-size: 32px; font-weight: bold; color: #1976d2; margin: 10px 0;">${otp}</div>
-            <p style="color: #666; margin: 10px 0;">This code will expire in 10 minutes</p>
-          </div>
-          <p>If you didn't request this verification, please ignore this email.</p>
-          <p>Best regards,<br>The NetruDoc Team</p>
-        </div>
-      `
-    };
-
-    try {
-      await this.transporter.sendMail(mailOptions);
-      console.log(`Registration OTP sent to ${email}`);
-    } catch (error) {
-      console.error('Failed to send registration OTP:', error);
-      throw new Error('Failed to send verification email');
-    }
-  }
-
-  /**
-   * Send OTP email for login verification
-   * @param {String} email - Recipient email
-   * @param {String} otp - 6-digit OTP code
-   * @returns {Promise<void>}
-   */
-  async sendLoginOTP(email, otp) {
-    const mailOptions = {
-      from: 'ashishkhadka014@gmail.com',
-      to: email,
-      subject: 'NetruDoc - Login Verification OTP',
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #1976d2;">NetruDoc Login Verification</h2>
-          <p>You are attempting to log in to your NetruDoc account.</p>
-          <div style="background-color: #f5f5f5; padding: 20px; text-align: center; margin: 20px 0;">
-            <h3 style="color: #333; margin: 0;">Your Login Code</h3>
-            <div style="font-size: 32px; font-weight: bold; color: #1976d2; margin: 10px 0;">${otp}</div>
-            <p style="color: #666; margin: 10px 0;">This code will expire in 10 minutes</p>
-          </div>
-          <p>If you didn't request this login, please ignore this email and contact support if you have concerns.</p>
-          <p>Best regards,<br>The NetruDoc Team</p>
-        </div>
-      `
-    };
-
-    try {
-      await this.transporter.sendMail(mailOptions);
-      console.log(`Login OTP sent to ${email}`);
-    } catch (error) {
-      console.error('Failed to send login OTP:', error);
-      throw new Error('Failed to send login verification email');
-    }
-  }
-
-  /**
-   * Send OTP email for password reset
-   * @param {String} email - Recipient email
-   * @param {String} otp - 6-digit OTP code
-   * @returns {Promise<void>}
-   */
-  async sendPasswordResetOTP(email, otp) {
-    const mailOptions = {
-      from: 'ashishkhadka014@gmail.com',
-      to: email,
-      subject: 'NetruDoc - Password Reset OTP',
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #1976d2;">NetruDoc Password Reset</h2>
-          <p>You have requested to reset your password for your NetruDoc account.</p>
-          <div style="background-color: #f5f5f5; padding: 20px; text-align: center; margin: 20px 0;">
-            <h3 style="color: #333; margin: 0;">Your Reset Code</h3>
-            <div style="font-size: 32px; font-weight: bold; color: #1976d2; margin: 10px 0;">${otp}</div>
-            <p style="color: #666; margin: 10px 0;">This code will expire in 10 minutes</p>
-          </div>
-          <p>If you didn't request this password reset, please ignore this email. Your password will remain unchanged.</p>
-          <p>Best regards,<br>The NetruDoc Team</p>
-        </div>
-      `
-    };
-
-    // LOG OTP FOR DEBUGGING (Read this from Render Logs!)
-    console.log(`\n=== [${new Date().toISOString()}] ===`);
-    console.log('DEBUG: PASSWORD RESET CODE FOR', email);
-    console.log('CODE:', otp);
-    console.log('==========================================\n');
-
-    try {
-      await this.transporter.sendMail(mailOptions);
-      console.log(`Password reset OTP sent to ${email}`);
-    } catch (error) {
-      console.error('Failed to send password reset OTP:', error);
-      throw new Error('Failed to send password reset email');
-    }
-  }
-
-  /**
-   * Generic OTP email sender
-   * @param {String} email - Recipient email
-   * @param {String} otp - 6-digit OTP code
-   * @param {String} type - OTP type ('registration', 'login', 'password-reset')
-   * @returns {Promise<void>}
-   */
-  async sendOTP(email, otp, type) {
-    switch (type) {
-      case 'registration':
-        return this.sendRegistrationOTP(email, otp);
-      case 'login':
-        return this.sendLoginOTP(email, otp);
-      case 'password-reset':
-        return this.sendPasswordResetOTP(email, otp);
-      default:
-        throw new Error('Invalid OTP type');
-    }
-  }
-
-  /**
-   * Send appointment status email (confirmed / cancelled)
-   * @param {String} email - Recipient email
-   * @param {String} status - 'confirmed' or 'cancelled'
-   * @param {Object} context - Additional context (patientName, doctorName, date, time, reason)
-   * @returns {Promise<void>}
-   */
-  async sendAppointmentStatusEmail(email, status, context = {}) {
-    const { patientName, doctorName, date, time, reason } = context;
-
-    const isConfirmed = status === 'confirmed';
-    const subject = isConfirmed
-      ? 'Your NetruDoc appointment has been confirmed'
-      : 'Your NetruDoc appointment has been cancelled';
-
-    const dateObj = date ? new Date(date) : null;
-    const formattedDate = dateObj && !Number.isNaN(dateObj.getTime())
-      ? dateObj.toLocaleDateString()
-      : 'the scheduled date';
-
-    const timeText = time || 'the scheduled time';
-
-    const reasonHtml = reason
-      ? `<p><strong>Reason:</strong> ${reason}</p>`
-      : '';
-
-    const statusLine = isConfirmed
-      ? 'has been <strong style=\"color:#2e7d32;\">confirmed</strong>.'
-      : 'has been <strong style=\"color:#c62828;\">cancelled</strong>.';
-
-    const greetingName = patientName || 'Patient';
-
-    const html = `
-      <div style=\"font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;\">
-        <h2 style=\"color: #1976d2;\">NetruDoc Appointment Update</h2>
-        <p>Dear ${greetingName},</p>
-        <p>Your appointment with Dr. ${doctorName || 'your doctor'} on <strong>${formattedDate}</strong> at <strong>${timeText}</strong> ${statusLine}</p>
-        ${reasonHtml}
-        <p>If you have any questions, please log in to NetruDoc to review your appointments.</p>
-        <p>Best regards,<br/>The NetruDoc Team</p>
-      </div>
-    `;
-
-    const mailOptions = {
-      from: 'ashishkhadka014@gmail.com',
-      to: email,
-      subject,
-      html
-    };
-
-    try {
-      await this.transporter.sendMail(mailOptions);
-      console.log(`Appointment ${status} email sent to ${email}`);
-    } catch (error) {
-      console.error(`Failed to send appointment ${status} email:`, error);
-      // Do not throw here – appointment flow should not fail because email failed
     }
   }
 }
 
-// Export singleton instance
 export default new EmailService();

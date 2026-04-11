@@ -128,21 +128,10 @@ export class AuthService {
     const otp = user.generateOTP('registration');
     await user.save({ validateBeforeSave: false });
 
-    // LOG OTP FOR DEBUGGING (Read this from Render Logs!)
-    console.log(`\n=== [${new Date().toISOString()}] ===`);
-    console.log('DEBUG: VERIFICATION CODE FOR', email);
-    console.log('CODE:', otp);
-    console.log('==========================================\n');
-
-    try {
-      await emailService.sendRegistrationOTP(email, otp);
-    } catch (error) {
-      // If email fails, HARD delete the temporary user record so they can try again
-      // Soft-deleting (isActive: false) leads to "Account Deactivated" loop
-      await this.userService.permanentlyDeleteUser(user._id);
-      console.error(`Registration failed to send email to ${email}:`, error);
-      throw new Error('Failed to send verification email. Please check your email address and try again.');
-    }
+    // Attempt to send email but don't block the response
+    emailService.sendRegistrationOTP(email, otp).catch(err => {
+      console.error('📧 Registration email failed:', err.message);
+    });
 
     return {
       message: 'Registration initiated. Please check your email for verification code.',
@@ -359,20 +348,13 @@ export class AuthService {
     const otp = user.generateOTP('password-reset');
     await user.save({ validateBeforeSave: false });
 
-    // LOG OTP FOR DEBUGGING (Read this from Render Logs!)
-    console.log('\n==========================================');
-    console.log('DEBUG: PASSWORD RESET CODE FOR', email);
-    console.log('CODE:', otp);
-    console.log('==========================================\n');
-
     // Attempt to send email but don't block the response
     emailService.sendPasswordResetOTP(email, otp).catch(err => {
-      console.error('📧 Password reset email failed, use code from logs:', err.message);
+      console.error('📧 Password reset email failed:', err.message);
     });
 
     return {
-      message: 'If an account exists with this email, a password reset code has been sent',
-      otp: otp // Included for development debugging in the controller
+      message: 'If an account exists with this email, a password reset code has been sent'
     };
   }
 

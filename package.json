@@ -1,6 +1,9 @@
 {
   "name": "netrudoc-backend",
   "version": "1.0.0",
+  "engines": {
+    "node": "20.x"
+  },
   "main": "src/index.js",
   "type": "module",
   "scripts": {
@@ -40,6 +43,7 @@
     "multer": "^2.1.1",
     "nodemailer": "^7.0.11",
     "pdfkit": "^0.15.2",
+    "resend": "^6.10.0",
     "socket.io": "^4.8.1",
     "stripe": "^20.1.0",
     "winston": "^3.19.0"

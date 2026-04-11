@@ -109,7 +109,10 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 app.get('/', (req, res) => {
-  res.status(200).send(`<h1>Welcome to NetruDoc API</h1><p>Server Version: 1.0.5 - ${new Date().toISOString()}</p>`);
+  res.status(200).json({ 
+    message: 'NetruDoc API is running correctly',
+    status: 'healthy'
+  });
 });
 
 app.use('/api/auth', authLimiter, authRoutes);
