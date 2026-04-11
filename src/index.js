@@ -89,9 +89,9 @@ app.use(cors({
       return callback(null, true);
     }
     const normalizedOrigin = origin.replace(/\/$/, '');
-    const allowed = normalizedOrigin.startsWith('http://localhost') || 
-                   normalizedOrigin.endsWith('.vercel.app') ||
-                   normalizedOrigin === (process.env.CLIENT_URL ? process.env.CLIENT_URL.replace(/\/$/, '') : '');
+    const allowed = normalizedOrigin.startsWith('http://localhost') ||
+      normalizedOrigin.endsWith('.vercel.app') ||
+      normalizedOrigin === (process.env.CLIENT_URL ? process.env.CLIENT_URL.replace(/\/$/, '') : '');
     if (allowed) {
       callback(null, true);
     } else {
@@ -109,7 +109,7 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 app.get('/', (req, res) => {
-  res.status(200).json({ 
+  res.status(200).json({
     message: 'NetruDoc API is running correctly',
     status: 'healthy'
   });
@@ -136,44 +136,24 @@ app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
 
-// Unified startup for both Vercel and Render
-const startServer = async () => {
+connectDB().then(async () => {
   try {
-    await connectDB();
-    
-    // Only run seeding and verification if NOT on Vercel (or during manual trigger)
-    if (!process.env.VERCEL) {
-      console.log('📦 Production Environment (Render/Local) detected...');
-      await seedDatabase();
-      
-      // non-blocking verification
-      emailService.verifyConnection().then(success => {
-        if (success) console.log('✅ SMTP Configuration looks good!');
-      });
-      
-      server.listen(PORT, () => {
-        console.log(`🚀 NetruDoc Server running on port ${PORT}`);
-      });
-    }
+    await seedDatabase();
+    emailService.verifyConnection().catch(err => {
+      console.error('📧 Email Service: Verification failed:', err.message);
+    });
   } catch (error) {
-    console.error('❌ Critical Startup Error:', error.message);
-    if (!process.env.VERCEL) process.exit(1);
+    console.error('Warning: Database seeding failed:', error.message);
   }
-};
 
-startServer();
-
-// Add a manual test route to trigger email verification
-app.get('/api/auth/test-email', async (req, res) => {
-  console.log('🧪 Manual Email Test Triggered...');
-  const success = await emailService.verifyConnection();
-  res.json({ 
-    success, 
-    message: success ? 'Nodemailer connection works!' : 'Nodemailer connection failed. Check server logs.',
-    timestamp: new Date()
+  server.listen(PORT, () => {
+    console.log(`🚀 NetruDoc Server running on port ${PORT}`);
+    console.log(`📧 Active Email User: ${process.env.EMAIL_USER || 'ashishkhadka014@gmail.com'}`);
   });
+}).catch((error) => {
+  console.error('Failed to start server:', error);
+  process.exit(1);
 });
 
-// Export for Vercel
 export default app;
-export { io, server };
+export { io };

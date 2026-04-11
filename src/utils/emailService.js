@@ -1,32 +1,19 @@
-import nodemailer from 'nodemailer';
+import sgMail from '@sendgrid/mail';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
 class EmailService {
   constructor() {
-    console.log('📧 EmailService: Initializing with Gmail SMTP...');
-    this.transporter = nodemailer.createTransport({
-      host: 'smtp.gmail.com',
-      port: 587,
-      secure: false, // Port 587 uses STARTTLS
-      auth: {
-        user: process.env.EMAIL_USER || 'ashishkhadka014@gmail.com',
-        pass: process.env.EMAIL_PASS,
-      },
-      pool: true, // Use pooling to keep connection alive
-      maxConnections: 1,
-      maxMessages: Infinity,
-      connectionTimeout: 60000, // Long timeout for Render Free Tier
-      greetingTimeout: 30000,
-      socketTimeout: 60000,
-      debug: true, // IMPORTANT: Enables full conversation logs
-      logger: true, // IMPORTANT: Logs everything to console
-      tls: {
-        rejectUnauthorized: false,
-        minVersion: 'TLSv1.2'
-      }
-    });
+    // Falls back to a placeholder if the env var is missing
+    this.apiKey = process.env.SENDGRID_API_KEY;
+    if (this.apiKey) {
+      sgMail.setApiKey(this.apiKey);
+    }
+    
+    // IMPORTANT: In SendGrid, you MUST use a verified Sender email address
+    // This is usually your own email or a domain email you verified in SendGrid dashboard
+    this.fromEmail = process.env.EMAIL_USER || 'ashishkhadka014@gmail.com'; 
   }
 
   /**
@@ -34,22 +21,31 @@ class EmailService {
    */
   async sendRegistrationOTP(email, otp) {
     try {
-      console.log(`📧 Attempting to send Registration OTP to ${email}...`);
-      const mailOptions = {
-        from: `"NetruDoc" <${process.env.EMAIL_USER || 'ashishkhadka014@gmail.com'}>`,
-        to: email,
-        subject: 'Welcome to NetruDoc - Verify Your Email',
-        html: `<div style="padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
-          <h2>Account Verification</h2>
-          <p>Your verification code is: <b style="font-size: 24px;">${otp}</b></p>
-        </div>`,
-      };
+      console.log(`[DEV] Registration OTP for ${email}: ${otp}`); // For easy testing if email is slow
       
-      const info = await this.transporter.sendMail(mailOptions);
-      console.log(`📧 Nodemailer: Success! Message sent: ${info.messageId}`);
+      const msg = {
+        to: email,
+        from: this.fromEmail,
+        subject: 'Welcome to NetruDoc - Verify Your Email',
+        html: `
+          <div style="font-family: Arial, sans-serif; padding: 20px; border: 1px solid #e1e1e1; border-radius: 10px;">
+            <h2 style="color: #4f46e5;">Welcome to NetruDoc</h2>
+            <p>Your verification code is: <b style="font-size: 24px;">${otp}</b></p>
+            <p>This code expires in 10 minutes.</p>
+          </div>
+        `,
+      };
+
+      if (!this.apiKey) {
+        console.warn('⚠️ SendGrid: API Key missing. Skipping email send.');
+        return false;
+      }
+
+      await sgMail.send(msg);
+      console.log(`📧 SendGrid: Registration OTP sent to ${email}`);
       return true;
     } catch (error) {
-      console.error('📧 Nodemailer Error during Registration:', error.message);
+      console.error('📧 SendGrid Error:', error.response ? error.response.body : error.message);
       return false;
     }
   }
@@ -59,16 +55,18 @@ class EmailService {
    */
   async sendLoginOTP(email, otp) {
     try {
-      const mailOptions = {
-        from: `"NetruDoc" <${process.env.EMAIL_USER || 'ashishkhadka014@gmail.com'}>`,
+      console.log(`[DEV] Login OTP for ${email}: ${otp}`);
+      const msg = {
         to: email,
-        subject: 'NetruDoc - Login Code',
-        html: `<p>Your login code is: <b>${otp}</b></p>`,
+        from: this.fromEmail,
+        subject: 'NetruDoc - Login Verification',
+        html: `<p>Your login verification code is: <b>${otp}</b></p>`,
       };
-      await this.transporter.sendMail(mailOptions);
+      await sgMail.send(msg);
+      console.log(`📧 SendGrid: Login OTP sent to ${email}`);
       return true;
     } catch (error) {
-      console.error('📧 Nodemailer Login Error:', error.message);
+      console.error('📧 SendGrid Login Error:', error.message);
       return false;
     }
   }
@@ -78,16 +76,18 @@ class EmailService {
    */
   async sendPasswordResetOTP(email, otp) {
     try {
-      const mailOptions = {
-        from: `"NetruDoc" <${process.env.EMAIL_USER || 'ashishkhadka014@gmail.com'}>`,
+      console.log(`[DEV] Reset OTP for ${email}: ${otp}`);
+      const msg = {
         to: email,
+        from: this.fromEmail,
         subject: 'NetruDoc - Password Reset',
         html: `<p>Your password reset code is: <b>${otp}</b></p>`,
       };
-      await this.transporter.sendMail(mailOptions);
+      await sgMail.send(msg);
+      console.log(`📧 SendGrid: Reset OTP sent to ${email}`);
       return true;
     } catch (error) {
-      console.error('📧 Nodemailer Reset Error:', error.message);
+      console.error('📧 SendGrid Reset Error:', error.message);
       return false;
     }
   }
@@ -95,30 +95,28 @@ class EmailService {
   async sendAppointmentStatusEmail(email, status, details) {
     try {
       const { patientName, doctorName, date, time } = details;
-      const mailOptions = {
-        from: `"NetruDoc" <${process.env.EMAIL_USER || 'ashishkhadka014@gmail.com'}>`,
+      const msg = {
         to: email,
-        subject: `Appointment ${status}`,
-        html: `<p>Hi ${patientName}, your appointment with Dr. ${doctorName} on ${date} at ${time} is ${status}.</p>`,
+        from: this.fromEmail,
+        subject: `Appointment ${status} - NetruDoc`,
+        html: `<p>Hello ${patientName}, your appointment with Dr. ${doctorName} on ${date} at ${time} is ${status}.</p>`,
       };
-      await this.transporter.sendMail(mailOptions);
+      await sgMail.send(msg);
+      console.log(`📧 SendGrid: Appointment ${status} email sent to ${email}`);
       return true;
     } catch (error) {
-      console.error('📧 Nodemailer Appointment Error:', error.message);
+      console.error('📧 SendGrid Appointment Error:', error.message);
       return false;
     }
   }
 
   async verifyConnection() {
-    console.log('📧 Nodemailer: Starting SMTP connection test...');
-    try {
-      await this.transporter.verify();
-      console.log('📧 Nodemailer: Success! Connection Verified.');
-      return true;
-    } catch (error) {
-      console.error('📧 Nodemailer Connection Check Failed:', error.message);
+    if (!this.apiKey) {
+      console.log('⚠️ SendGrid: API Key missing. Email service will not work until SENDGRID_API_KEY is set.');
       return false;
     }
+    console.log('📧 Email Service (SendGrid API): Ready');
+    return true;
   }
 }
 
