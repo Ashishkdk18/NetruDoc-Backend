@@ -5,7 +5,10 @@ dotenv.config();
 
 class EmailService {
   constructor() {
-    // Falls back to a placeholder if the env var is missing
+    // DEBUG: List available keys to help troubleshoot Render
+    const keys = Object.keys(process.env).filter(k => k.includes('SENDGRID') || k.includes('EMAIL'));
+    console.log('🔍 Available Email Keys:', keys);
+    
     this.apiKey = process.env.SENDGRID_API_KEY;
     if (this.apiKey) {
       sgMail.setApiKey(this.apiKey);
