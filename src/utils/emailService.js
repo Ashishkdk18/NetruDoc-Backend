@@ -6,13 +6,19 @@ import nodemailer from 'nodemailer';
  */
 export class EmailService {
   constructor() {
-    // Create transporter with Google SMTP credentials
-    // Using environment variables with fallbacks
+    // Create transporter with explicit Google SMTP configuration
+    // Using port 465 (SMTPS) is generally more reliable in cloud environments
     this.transporter = nodemailer.createTransport({
-      service: 'gmail',
+      host: 'smtp.gmail.com',
+      port: 465,
+      secure: true, // Use SSL
       auth: {
         user: process.env.EMAIL_USER || 'ashishkhadka014@gmail.com',
         pass: process.env.EMAIL_PASS || 'xcuj guqb vyll rsuo'
+      },
+      tls: {
+        // Do not fail on invalid certificates
+        rejectUnauthorized: false
       }
     });
   }
