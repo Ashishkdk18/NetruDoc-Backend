@@ -108,16 +108,18 @@ app.use(cors({
     if (origin && /^(https?:\/\/)?(192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[0-1])\.|169\.254\.)\d+\.\d+:\d+$/.test(origin)) {
       return callback(null, true);
     }
+    // Normalize origin by removing trailing slash for comparison
+    const normalizedOrigin = origin.replace(/\/$/, '');
     
     // Allow localhost and any vercel.app subdomain
-    const allowed = origin.startsWith('http://localhost') || 
-                   origin.endsWith('.vercel.app') ||
-                   origin === process.env.CLIENT_URL;
+    const allowed = normalizedOrigin.startsWith('http://localhost') || 
+                   normalizedOrigin.endsWith('.vercel.app') ||
+                   normalizedOrigin === (process.env.CLIENT_URL ? process.env.CLIENT_URL.replace(/\/$/, '') : '');
                    
     if (allowed) {
       callback(null, true);
     } else {
-      callback(new Error('Not allowed by CORS'));
+      callback(new Error(`Origin ${origin} not allowed by CORS`));
     }
   },
   credentials: true,
