@@ -42,35 +42,23 @@ const server = createServer(app);
 const io = new Server(server, {
   cors: {
     origin: function (origin, callback) {
-      // Allow requests with no origin (like mobile apps or curl requests)
       if (!origin) return callback(null, true);
-
-      // Allow localhost variations for development
       if (origin && (origin.includes('localhost') || origin.includes('127.0.0.1'))) {
         return callback(null, true);
       }
-
-      // Allow local network IPs (192.168.x.x, 10.x.x.x, 172.16-31.x.x, 169.254.x.x)
       if (origin && /^(https?:\/\/)?(192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[0-1])\.|169\.254\.)\d+\.\d+:\d+$/.test(origin)) {
         return callback(null, true);
       }
-
-      // Allow all Vercel deployments (production + preview URLs)
       if (origin && origin.match(/https:\/\/.*\.vercel\.app$/)) {
         return callback(null, true);
       }
-
-      // For development, allow all origins to make testing easier
       if (process.env.NODE_ENV === 'development') {
         return callback(null, true);
       }
-
-      // Default: allow the configured CLIENT_URL
       const allowedOrigin = process.env.CLIENT_URL || "http://localhost:3000";
       if (origin === allowedOrigin) {
         return callback(null, true);
       }
-
       return callback(new Error('Not allowed by CORS'));
     },
     credentials: true,
@@ -78,44 +66,32 @@ const io = new Server(server, {
   }
 });
 
-// Rate limiting - more lenient for development
 const limiter = rateLimit({
-  windowMs: process.env.NODE_ENV === 'development' ? 60 * 1000 : 15 * 60 * 1000, // 1 minute in dev, 15 minutes in prod
-  max: process.env.NODE_ENV === 'development' ? 500 : 100, // 500 requests per minute in dev, 100 per 15min in prod
+  windowMs: process.env.NODE_ENV === 'development' ? 60 * 1000 : 15 * 60 * 1000,
+  max: process.env.NODE_ENV === 'development' ? 500 : 100,
   message: 'Too many requests from this IP, please try again later.'
 });
 
-// More lenient limiter for auth endpoints
 const authLimiter = rateLimit({
-  windowMs: 60 * 1000, // 1 minute
-  max: 30, // 30 requests per minute for auth endpoints
+  windowMs: 60 * 1000,
+  max: 30,
   message: 'Too many authentication requests, please try again later.'
 });
 
-// Middleware
 app.use(helmet());
 app.use(cors({
   origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
-
-    // Allow localhost variations for development
     if (origin && (origin.includes('localhost') || origin.includes('127.0.0.1'))) {
       return callback(null, true);
     }
-
-    // Allow local network IPs (192.168.x.x, 10.x.x.x, 172.16-31.x.x, 169.254.x.x)
     if (origin && /^(https?:\/\/)?(192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[0-1])\.|169\.254\.)\d+\.\d+:\d+$/.test(origin)) {
       return callback(null, true);
     }
-    // Normalize origin by removing trailing slash for comparison
     const normalizedOrigin = origin.replace(/\/$/, '');
-    
-    // Allow localhost and any vercel.app subdomain
     const allowed = normalizedOrigin.startsWith('http://localhost') || 
                    normalizedOrigin.endsWith('.vercel.app') ||
                    normalizedOrigin === (process.env.CLIENT_URL ? process.env.CLIENT_URL.replace(/\/$/, '') : '');
-                   
     if (allowed) {
       callback(null, true);
     } else {
@@ -126,31 +102,17 @@ app.use(cors({
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"]
 }));
+
 app.use(morgan('combined'));
 app.use(limiter);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Root route
 app.get('/', (req, res) => {
-  res.status(200).send('<h1>Welcome to NetruDoc API</h1><p>The server is running successfully. Please use the frontend application to interact with this API.</p>');
+  res.status(200).send('<h1>Welcome to NetruDoc API</h1>');
 });
 
-// Health check endpoint
-app.get('/api/health', (req, res) => {
-  res.status(200).json({
-    status: 'success',
-    message: 'NetruDoc API is running',
-    data: {
-      timestamp: new Date().toISOString(),
-      environment: process.env.NODE_ENV || 'development',
-      version: '1.0.0'
-    }
-  });
-});
-
-// Routes
-app.use('/api/auth', authLimiter, authRoutes); // More lenient rate limiting for auth
+app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/appointments', appointmentRoutes);
 app.use('/api/consultations', consultationRoutes);
@@ -164,34 +126,26 @@ app.use('/api/audit', auditRoutes);
 app.use('/api/reports', reportsRoutes);
 app.use('/api/admin', adminRoutes);
 
-// Socket.io connection handling
-io.use(socketAuth);
 registerSocketHandlers(io);
 
-// Error handling middleware
 app.use(notFound);
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
 
-// Connect to database, seed data, and start server
 connectDB().then(async () => {
-  // Seed database with initial data
   try {
     await seedDatabase();
-    // Verify email service connection (don't block server startup)
     emailService.verifyConnection().catch(err => {
       console.error('📧 Email Service: Verification failed:', err.message);
     });
   } catch (error) {
     console.error('Warning: Database seeding failed:', error.message);
-    // Continue server startup even if seeding fails
   }
 
   server.listen(PORT, () => {
     console.log(`🚀 NetruDoc Server running on port ${PORT}`);
-    console.log(`📱 Socket.io server ready`);
-    console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`📧 Active Email User: ${process.env.EMAIL_USER || 'ashishkhadka014@gmail.com'}`);
   });
 }).catch((error) => {
   console.error('Failed to start server:', error);
